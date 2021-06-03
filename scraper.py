@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import urllib.request
 
-
 # read the html file (implement read fromn site)
 url = 'https://www.bseindia.com/markets/equity/EQReports/bulk_deals.aspx'
 headers = {
@@ -14,9 +13,7 @@ html_text = requests.get(
 
 soup = BeautifulSoup(html_text.content, 'lxml')
 
-
 # init lists
-
 Date = []
 Code = []
 SecName = []
@@ -25,10 +22,8 @@ Type = []
 Quantity = []
 Price = []
 
-
-j = 0
-
 # parse the td tags in sequence
+j = 0
 td_tags = soup.find_all(
     'td', class_=['tdcolumn', 'tdcolumn text-right', 'TTRow_left'])
 for info in td_tags:
@@ -49,16 +44,7 @@ for info in td_tags:
 
     j = j+1
 
-
 print("^^^^^^^^^^^^")
-# checks len =
-print(len(Date))
-print(len(Code))
-print(len(SecName))
-print(len(Name))
-print(len(Type))
-print(len(Quantity))
-print(len(Price))
 
 df = pd.DataFrame({
     'Deal Date': Date,

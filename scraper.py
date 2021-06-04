@@ -1,59 +1,37 @@
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
-import urllib.request
+from bs4 import BeautifulSoup
+from collections import defaultdict
 
-# read the html file (implement read fromn site)
-url = 'https://www.bseindia.com/markets/equity/EQReports/bulk_deals.aspx'
-headers = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36'}
+URL = 'https://www.bseindia.com/markets/equity/EQReports/bulk_deals.aspx'
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36'
+}
+FIELDS = ['Deal Date', 'Security Code', 'Security Name', 'Client Name', 'Deal Type', 'Quantity', 'Price']
 
-html_text = requests.get(
-    url, headers=headers)
+# Function to get TD tags from url and headers
+def get_td_tags(url, headers):
+    html_data = requests.get(url, headers=headers)
+    return BeautifulSoup(html_data.content).find_all('td', class_=['tdcolumn', 'tdcolumn text-right', 'TTRow_left'])
 
-soup = BeautifulSoup(html_text.content, 'lxml')
+# Function to create dictionary of lists based on TD data
+def get_list_data(td_tags, *args):
+    args = args[0]
+    lists = defaultdict(list)
+    for index, info in enumerate(td_tags):
+        lists[args[index % 7]].append(info.text)
+    return lists
 
-# init lists
-Date = []
-Code = []
-SecName = []
-Name = []
-Type = []
-Quantity = []
-Price = []
+# Convert list data to pandas dataframe and generate excel
+def generate_excel(lists):
+    df = pd.DataFrame(lists)
+    df.to_excel('EXCEL.xlsx', index=False)
 
-# parse the td tags in sequence
-j = 0
-td_tags = soup.find_all(
-    'td', class_=['tdcolumn', 'tdcolumn text-right', 'TTRow_left'])
-for info in td_tags:
-    if (j % 7) == 1:
-        Date.append(info.text)
-    if (j % 7) == 2:
-        Code.append(info.text)
-    if (j % 7) == 3:
-        SecName.append(info.text)
-    if (j % 7) == 4:
-        Name.append(info.text)
-    if (j % 7) == 5:
-        Type.append(info.text)
-    if (j % 7) == 6:
-        Quantity.append(info.text)
-    if (j % 7) == 0:
-        Price.append(info.text)
+# Main function
+def main():
+    td_tags = get_td_tags(URL, HEADERS)
+    lists = get_list_data(td_tags, FIELDS)
+    generate_excel(lists)
 
-    j = j+1
-
-print("^^^^^^^^^^^^")
-
-df = pd.DataFrame({
-    'Deal Date': Date,
-    'Security Code': Code,
-    'Security Name': SecName,
-    'Client Name': Name,
-    'Deal Type': Type,
-    'Quantity': Quantity,
-    'Price': Price,
-})
-
-df.to_excel('EXCELLL.xlsx', index=False)
+if __name__ == '__main__':
+    main()
